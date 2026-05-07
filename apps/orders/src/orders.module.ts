@@ -3,13 +3,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
-import { Order } from './orders/entities/order.entity';
+import { Order } from './entities/order.entity';
+import { OrdersRepository } from './orders.repository';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule, TypeOrmModule.forFeature([Order])],
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
@@ -22,8 +23,9 @@ import { Order } from './orders/entities/order.entity';
         synchronize: true,
       }),
     }),
+    TypeOrmModule.forFeature([Order]),
   ],
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, OrdersRepository],
 })
 export class OrdersModule {}
