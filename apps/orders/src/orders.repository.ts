@@ -29,4 +29,8 @@ export class OrdersRepository {
 
     return qb.getManyAndCount();
   }
+
+  async findById(id: string): Promise<Order | null> {
+    return this.repo.findOne({ where: { id } });
+  }
 }

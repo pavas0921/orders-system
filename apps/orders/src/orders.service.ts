@@ -1,8 +1,13 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { OrdersRepository } from './orders.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { OrderStatus } from './entities/order-status.enum';
+import { OrderStatus, VALID_TRANSITIONS } from './entities/order-status.enum';
 import { QueryOrdersDto } from './dto/query-orders.dto';
+import { UpdateStatusDto } from './dto/update-status.dto';
 
 const MIN_QUANTITY = 1;
 
@@ -30,5 +35,26 @@ export class OrdersService {
       limit: query.limit ?? 10,
       totalPages: Math.ceil(total / (query.limit ?? 10)),
     };
+  }
+
+  async updateStatus(id: string, dto: UpdateStatusDto) {
+    const order = await this.ordersRepository.findById(id);
+
+    if (!order) {
+      throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    const allowed = VALID_TRANSITIONS[order.status];
+    if (!allowed.includes(dto.status)) {
+      throw new BadRequestException(
+        `Cannot transition from ${order.status} to ${dto.status}`,
+      );
+    }
+
+    const previousStatus = order.status;
+    order.status = dto.status;
+    const updated = await this.ordersRepository.save(order);
+
+    return { updated, previousStatus };
   }
 }
