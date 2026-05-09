@@ -7,7 +7,8 @@ import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { OrdersRepository } from './orders.repository';
 import { Order } from './entities/order.entity';
-import { ApiKeyGuard } from './auth/guards/api-key.guard';
+import { AuthModule } from './auth/auth.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { ApiKeyGuard } from './auth/guards/api-key.guard';
         }),
       },
     ]),
+    AuthModule,
   ],
   controllers: [OrdersController],
   providers: [
@@ -48,7 +50,7 @@ import { ApiKeyGuard } from './auth/guards/api-key.guard';
     OrdersRepository,
     {
       provide: APP_GUARD,
-      useClass: ApiKeyGuard,
+      useClass: JwtAuthGuard,
     },
   ],
 })
