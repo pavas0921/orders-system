@@ -20,7 +20,7 @@ Sistema de gestión de órdenes compuesto por dos microservicios que se comunica
 ### 1. Clonar el repositorio
 
 ```bash
-git clone <url-del-repo>
+git clone 
 cd orders-system
 ```
 
@@ -32,23 +32,27 @@ cp .env.example .env
 
 Edita el `.env` con tus valores o deja los valores por defecto para desarrollo local.
 
-### 3. Levantar las bases de datos
+### 3. Levantar todo con Docker
 
 ```bash
+docker-compose up --build
+```
+
+Esto levanta los 4 contenedores:
+- `orders_service` — puerto 3000
+- `audit_service` — puerto 3001
+- `orders_postgres` — puerto 5432
+- `audit_mongo` — puerto 27017
+
+### Desarrollo local (opcional)
+
+Si prefieres correr los servicios fuera de Docker:
+
+```bash
+# Solo bases de datos en Docker
 docker-compose up -d postgres mongo
-```
 
-### 4. Instalar dependencias
-
-```bash
-npm install
-```
-
-### 5. Correr los servicios
-
-En terminales separadas:
-
-```bash
+# Servicios en modo watch
 npm run start:dev orders
 npm run start:dev audit
 ```

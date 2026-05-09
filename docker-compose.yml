@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -22,6 +20,37 @@ services:
       - '27017:27017'
     volumes:
       - mongo_data:/data/db
+
+  orders:
+    build:
+      context: .
+      dockerfile: apps/orders/Dockerfile
+    container_name: orders_service
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      DB_HOST: postgres
+      AUDIT_HOST: audit
+    depends_on:
+      - postgres
+      - mongo
+
+  audit:
+    build:
+      context: .
+      dockerfile: apps/audit/Dockerfile
+    container_name: audit_service
+    ports:
+      - '3001:3001'
+      - '4000:4000'
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/audit_db
+    depends_on:
+      - mongo
 
 volumes:
   postgres_data:
