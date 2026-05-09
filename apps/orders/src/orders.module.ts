@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
-import { Order } from './entities/order.entity';
 import { OrdersRepository } from './orders.repository';
+import { Order } from './entities/order.entity';
 
 @Module({
   imports: [
@@ -24,6 +25,20 @@ import { OrdersRepository } from './orders.repository';
       }),
     }),
     TypeOrmModule.forFeature([Order]),
+    ClientsModule.registerAsync([
+      {
+        name: 'AUDIT_SERVICE',
+        imports: [ConfigModule],
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          transport: Transport.TCP,
+          options: {
+            host: config.get<string>('AUDIT_HOST'),
+            port: config.get<number>('AUDIT_TCP_PORT'),
+          },
+        }),
+      },
+    ]),
   ],
   controllers: [OrdersController],
   providers: [OrdersService, OrdersRepository],

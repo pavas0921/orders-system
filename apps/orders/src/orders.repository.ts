@@ -11,8 +11,8 @@ export class OrdersRepository {
     private readonly repo: Repository<Order>,
   ) {}
 
-  async save(order: Order): Promise<Order> {
-    return this.repo.save(order);
+  async save(order: Partial<Order>): Promise<Order> {
+    return this.repo.save(order as Order);
   }
 
   async findAll(query: QueryOrdersDto): Promise<[Order[], number]> {

@@ -1,19 +1,26 @@
 import {
+  Inject,
   Injectable,
-  BadRequestException,
   NotFoundException,
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { OrdersRepository } from './orders.repository';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { OrderStatus, VALID_TRANSITIONS } from './entities/order-status.enum';
-import { QueryOrdersDto } from './dto/query-orders.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { QueryOrdersDto } from './dto/query-orders.dto';
+import { OrderStatus, VALID_TRANSITIONS } from './entities/order-status.enum';
 
 const MIN_QUANTITY = 1;
 
 @Injectable()
 export class OrdersService {
-  constructor(private readonly ordersRepository: OrdersRepository) {}
+  private readonly logger = new Logger(OrdersService.name);
+  constructor(
+    private readonly ordersRepository: OrdersRepository,
+    @Inject('AUDIT_SERVICE') private readonly auditClient: ClientProxy,
+  ) {}
 
   async create(dto: CreateOrderDto) {
     if (dto.quantity < MIN_QUANTITY) {
@@ -39,10 +46,7 @@ export class OrdersService {
 
   async updateStatus(id: string, dto: UpdateStatusDto) {
     const order = await this.ordersRepository.findById(id);
-
-    if (!order) {
-      throw new NotFoundException(`Order ${id} not found`);
-    }
+    if (!order) throw new NotFoundException(`Order ${id} not found`);
 
     const allowed = VALID_TRANSITIONS[order.status];
     if (!allowed.includes(dto.status)) {
@@ -51,10 +55,23 @@ export class OrdersService {
       );
     }
 
-    const previousStatus = order.status;
-    order.status = dto.status;
-    const updated = await this.ordersRepository.save(order);
+    const updated = await this.ordersRepository.save({
+      ...order,
+      status: dto.status,
+    });
 
-    return { updated, previousStatus };
+    this.logger.log(
+      `Order ${id} status changed: ${order.status} → ${dto.status}`,
+    );
+
+    // Fire and forget
+    this.auditClient.emit('order.status_changed', {
+      orderId: id,
+      fromStatus: order.status,
+      toStatus: dto.status,
+      metadata: { updatedAt: new Date() },
+    });
+
+    return updated;
   }
 }
