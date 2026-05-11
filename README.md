@@ -20,7 +20,7 @@ Sistema de gestión de órdenes compuesto por dos microservicios que se comunica
 ### 1. Clonar el repositorio
 
 ```bash
-git clone 
+git clone https://github.com/pavas0921/orders-system.git
 cd orders-system
 ```
 
